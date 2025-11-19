@@ -1,5 +1,22 @@
 package id.my.hendisantika.companystructure.repository;
 
+import id.my.hendisantika.companystructure.model.Company;
+import id.my.hendisantika.companystructure.model.Department;
+import id.my.hendisantika.companystructure.model.Employee;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Fetch;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import org.springframework.dao.support.DataAccessUtils;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
 /**
  * Created by IntelliJ IDEA.
  * Project : spring-security-oauth2-authorities-company-structure
