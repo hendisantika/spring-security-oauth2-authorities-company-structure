@@ -17,6 +17,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
