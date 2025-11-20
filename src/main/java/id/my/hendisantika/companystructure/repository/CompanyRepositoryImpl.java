@@ -1,19 +1,11 @@
 package id.my.hendisantika.companystructure.repository;
 
 import id.my.hendisantika.companystructure.model.Company;
-import id.my.hendisantika.companystructure.model.Department;
-import id.my.hendisantika.companystructure.model.Employee;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Fetch;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,6 +21,7 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 @Repository
+@Transactional
 public class CompanyRepositoryImpl implements CompanyRepository {
 
     @PersistenceContext
@@ -36,51 +29,23 @@ public class CompanyRepositoryImpl implements CompanyRepository {
 
     @Override
     public Company find(Long id) {
-        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<Company> query = builder.createQuery(Company.class);
-
-        Root<Company> root = query.from(Company.class);
-        root.fetch(Company_.cars, JoinType.LEFT);
-        Fetch<Company, Department> departmentFetch = root.fetch(Company_.departments, JoinType.LEFT);
-        Fetch<Department, Employee> employeeFetch = departmentFetch.fetch(Department_.employees, JoinType.LEFT);
-        employeeFetch.fetch(Employee_.address, JoinType.LEFT);
-        departmentFetch.fetch(Department_.offices, JoinType.LEFT);
-
-        query.select(root).distinct(true);
-        Predicate idPredicate = builder.equal(root.get(Company_.id), id);
-        query.where(builder.and(idPredicate));
-
-        return DataAccessUtils.singleResult(entityManager.createQuery(query).getResultList());
+        return entityManager.find(Company.class, id);
     }
 
     @Override
     public Company find(String name) {
-        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<Company> query = builder.createQuery(Company.class);
-
-        Root<Company> root = query.from(Company.class);
-        root.fetch(Company_.cars, JoinType.LEFT);
-        Fetch<Company, Department> departmentFetch = root.fetch(Company_.departments, JoinType.LEFT);
-        Fetch<Department, Employee> employeeFetch = departmentFetch.fetch(Department_.employees, JoinType.LEFT);
-        employeeFetch.fetch(Employee_.address, JoinType.LEFT);
-        departmentFetch.fetch(Department_.offices, JoinType.LEFT);
-
-        query.select(root).distinct(true);
-        Predicate idPredicate = builder.equal(root.get(Company_.name), name);
-        query.where(builder.and(idPredicate));
-
-        return DataAccessUtils.singleResult(entityManager.createQuery(query).getResultList());
+        TypedQuery<Company> query = entityManager.createQuery(
+                "SELECT c FROM Company c WHERE c.name = :name", Company.class);
+        query.setParameter("name", name);
+        List<Company> results = query.getResultList();
+        return results.isEmpty() ? null : results.get(0);
     }
 
     @Override
     public List<Company> findAll() {
-        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<Company> query = builder.createQuery(Company.class);
-        Root<Company> root = query.from(Company.class);
-        query.select(root).distinct(true);
-        TypedQuery<Company> allQuery = entityManager.createQuery(query);
-
-        return allQuery.getResultList();
+        TypedQuery<Company> query = entityManager.createQuery(
+                "SELECT c FROM Company c", Company.class);
+        return query.getResultList();
     }
 
     @Override
@@ -95,12 +60,14 @@ public class CompanyRepositoryImpl implements CompanyRepository {
 
     @Override
     public void delete(Long id) {
-        Company company = entityManager.find(Company.class, id);
-        delete(company);
+        Company company = find(id);
+        if (company != null) {
+            entityManager.remove(company);
+        }
     }
 
     @Override
     public void delete(Company company) {
-        entityManager.remove(company);
+        entityManager.remove(entityManager.contains(company) ? company : entityManager.merge(company));
     }
 }

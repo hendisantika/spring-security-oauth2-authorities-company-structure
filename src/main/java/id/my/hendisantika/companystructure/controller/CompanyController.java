@@ -65,7 +65,7 @@ public class CompanyController {
     public ResponseEntity<?> create(@RequestBody Company company) {
         companyService.create(company);
         HttpHeaders headers = new HttpHeaders();
-        ControllerLinkBuilder linkBuilder = linkTo(methodOn(CompanyController.class).get(company.getId()));
+        var linkBuilder = linkTo(methodOn(CompanyController.class).get(company.getId()));
         headers.setLocation(linkBuilder.toUri());
         return new ResponseEntity<>(headers, HttpStatus.CREATED);
     }
