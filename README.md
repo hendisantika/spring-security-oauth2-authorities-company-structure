@@ -297,7 +297,7 @@ If you encounter Flyway migration conflicts:
 
 - Grouped PRs: `spring-boot`, `persistence` (Hibernate/Flyway/H2/PostgreSQL), `jackson`, `maven-plugins`,
   `minor-and-patch`, and a single `github-actions` group.
-- Conventional commit prefixes (`build(deps)`, `build(deps-dev)`, `ci(deps)`), labels and assignee.
+- Conventional commit messages (`build(deps): ...`, `build(deps-dev): ...`, `ci(deps): ...`), labels and assignee.
 - Major Spring Boot parent bumps are ignored and handled manually.
 
 ## Contributing
