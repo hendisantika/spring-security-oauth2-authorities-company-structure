@@ -1,35 +1,39 @@
 # Spring Security OAuth2 Authorities Company Structure
 
-A Spring Boot 3.5.6 application demonstrating OAuth2 authentication with company structure hierarchy and role-based
-access control.
+[![Java CI with Maven](https://github.com/hendisantika/spring-security-oauth2-authorities-company-structure/actions/workflows/maven.yml/badge.svg)](https://github.com/hendisantika/spring-security-oauth2-authorities-company-structure/actions/workflows/maven.yml)
+![Java](https://img.shields.io/badge/Java-25-orange?logo=openjdk)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.2-brightgreen?logo=springboot)
+[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-blue?logo=dependabot)](.github/dependabot.yml)
+
+A Spring Boot 4.1 application (running on JDK 25) demonstrating authority-based access control over a company
+structure hierarchy.
 
 ## Features
 
-- Spring Security OAuth2 implementation
+- Spring Security 7 with authority-based permissions
 - Company structure hierarchy (Company → Department → Office → Employee)
-- Role-based access control with authorities
-- JPA/Hibernate with Flyway migrations
+- JPA/Hibernate 7 with Flyway migrations
 - H2 in-memory database (default) with PostgreSQL support
-- RESTful API endpoints
+- RESTful API endpoints (Spring MVC + HATEOAS links)
 - H2 Console for database management
 
 ## Technologies
 
-- Java 25
-- Spring Boot 3.5.6
-- Spring Security OAuth2
-- Spring Data JPA
-- Hibernate 6
-- Flyway Database Migrations
-- H2 Database (in-memory)
-- PostgreSQL (optional)
-- Maven
-- Lombok
+| Component       | Version / Notes                                        |
+|-----------------|--------------------------------------------------------|
+| Java            | **25** (Temurin in CI)                                 |
+| Spring Boot     | **4.1.2**                                              |
+| Spring Security | 7.x (`SecurityFilterChain`, HTTP Basic)                |
+| Spring Data JPA | Hibernate ORM 7.x (+ `hibernate-processor`)            |
+| Jackson         | 3.x (`tools.jackson`) with `jackson-datatype-hibernate7` |
+| Flyway          | 12.x via `spring-boot-starter-flyway`                  |
+| Database        | H2 2.4 (default), PostgreSQL 42.7 driver (optional)    |
+| Build           | Maven Wrapper (Maven 3.9.11), Lombok                   |
 
 ## Prerequisites
 
-- JDK 25 or compatible version
-- Maven 3.x
+- **JDK 25** (`java -version` must report 25)
+- No local Maven needed — use the bundled Maven Wrapper (`./mvnw`)
 - (Optional) Docker for PostgreSQL
 
 ## Quick Start
@@ -37,20 +41,22 @@ access control.
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/hendisantika/spring-security-oauth2-authorities-company-structure.git
 cd spring-security-oauth2-authorities-company-structure
 ```
 
-### 2. Build the project
+### 2. Build & test
 
 ```bash
-mvn clean package
+./mvnw clean verify
 ```
 
 ### 3. Run the application
 
 ```bash
-mvn spring-boot:run
+./mvnw spring-boot:run
+# or
+java -jar target/company-structure-0.0.1-SNAPSHOT.jar
 ```
 
 The application will start on `http://localhost:8080`
@@ -107,12 +113,12 @@ To use PostgreSQL:
 
 ## Security Configuration
 
-The application uses **Spring Security 6** (Spring Boot 3 compatible) with OAuth2 and modern security patterns.
+The application uses **Spring Security 7** (Spring Boot 4) with a component-based `SecurityFilterChain`.
 
 ### Security Features
 
-- **Spring Security 6**: Component-based configuration (SecurityFilterChain)
-- **OAuth2 Authentication**: Token-based authentication support
+- **Spring Security 7**: Component-based configuration (`SecurityFilterChain`)
+- **Database-backed users**: `UserDetailsServiceImpl` loads users & authorities via JPA
 - **Role-Based Access Control**: Authority-based permissions
 - **HTTP Basic Authentication**: Enabled for API testing
 - **Password Encoders**:
@@ -125,24 +131,20 @@ The application uses **Spring Security 6** (Spring Boot 3 compatible) with OAuth
 - `Encoders`: Password encoder beans configuration
 - `@Dev`: Development profile annotation
 
-### Default Credentials
-
-Spring Security generates a random password on startup. Check the console output:
-
-```
-Using generated security password: <random-password>
-```
-
-**Username**: `user`
-**Password**: `<check console logs for generated password>`
-
 ### Predefined Users
 
-The application seeds test users via Flyway migrations. Check:
+Users are seeded by Flyway (`V11`–`V14`) and authenticate with **HTTP Basic**:
 
-- `src/main/resources/db/migration/h2/V14__insert_user.sql`
-- `src/main/resources/db/migration/h2/V13__insert_authorities.sql`
-- `src/main/resources/db/migration/h2/V12__insert_authentication.sql`
+| Username   | Password      | Authorities                                        |
+|------------|---------------|----------------------------------------------------|
+| `admin`    | `admin1234`   | all `COMPANY_*`, all `DEPARTMENT_*`, `ROLE_COMPANY_READER` |
+| `reader`   | `reader1234`  | `COMPANY_READ`, `DEPARTMENT_READ`                  |
+| `modifier` | `modifier1234`| `COMPANY_UPDATE`, `DEPARTMENT_UPDATE`              |
+| `reader2`  | `reader1234`  | `ROLE_COMPANY_READER`                              |
+
+Legacy OAuth2 client rows (`OAUTH_CLIENT_DETAILS`) are still seeded in `V12`, but the old
+`spring-security-oauth2` (2.x) authorization server has been removed because it is end-of-life and incompatible
+with Spring Boot 4. The previous configuration is kept as `*.java.bak` files for reference.
 
 ### H2 Console Access
 
@@ -162,18 +164,26 @@ The application manages the following entities:
 - **Employee**: Belongs to an Office
 - **Car**: Company assets
 - **Address**: Location information
-- **Users & Authorities**: OAuth2 authentication
+- **Users & Authorities**: authentication & authorization data
 
 ## API Endpoints
 
-All endpoints require authentication.
+All endpoints live under `/secured/company` and require authentication.
 
-Example endpoints (based on the project structure):
+| Method   | Path                              | Required authority                      |
+|----------|-----------------------------------|-----------------------------------------|
+| `GET`    | `/secured/company`                | `COMPANY_READ`                          |
+| `GET`    | `/secured/company/{id}`           | `COMPANY_READ` and `DEPARTMENT_READ`    |
+| `GET`    | `/secured/company/filter?name=..` | `COMPANY_READ` and `DEPARTMENT_READ`    |
+| `POST`   | `/secured/company`                | `COMPANY_CREATE`                        |
+| `PUT`    | `/secured/company`                | `COMPANY_UPDATE`                        |
+| `DELETE` | `/secured/company/{id}`           | `COMPANY_DELETE`                        |
 
-- `GET /api/companies` - List all companies
-- `GET /api/departments` - List all departments
-- `GET /api/offices` - List all offices
-- `GET /api/employees` - List all employees
+Example:
+
+```bash
+curl -u admin:admin1234 http://localhost:8080/secured/company
+```
 
 ## Development
 
@@ -190,7 +200,7 @@ When running with H2 profile, access the database console at:
 ### Running Tests
 
 ```bash
-mvn test
+./mvnw test
 ```
 
 ## Database Migrations
@@ -241,7 +251,7 @@ src/
 │       │   ├── h2/
 │       │   └── postgresql/
 │       ├── application.properties
-│       ├── application-dev.properties
+│       ├── application-default.properties
 │       ├── application-h2.properties
 │       └── application-postgres.properties
 └── test/
@@ -252,7 +262,7 @@ src/
 ### Application fails to start
 
 1. Ensure JDK 25 is installed: `java -version`
-2. Clean and rebuild: `mvn clean package`
+2. Clean and rebuild: `./mvnw clean verify`
 3. Check port 8080 is available: `lsof -i :8080`
 
 ### Database connection issues
@@ -264,11 +274,31 @@ src/
 
 If you encounter Flyway migration conflicts:
 
-```bash
-mvn clean
-mvn flyway:clean
-mvn spring-boot:run
-```
+- H2 (default) is in-memory, so simply restart the application.
+- For PostgreSQL, drop/recreate the database (or the `flyway_schema_history` table) and restart.
+
+## CI/CD & Dependency Management
+
+### GitHub Actions
+
+[`.github/workflows/maven.yml`](.github/workflows/maven.yml) runs on every push / pull request to `main`
+(and manually via *workflow_dispatch*):
+
+- **Build & Test (JDK 25)** — Temurin JDK 25, Maven cache, `./mvnw -B -ntp verify`; Surefire reports are uploaded
+  as an artifact when the build fails.
+- **Submit dependency graph** — only on pushes to `main`; feeds the Maven dependency graph to GitHub so Dependabot
+  alerts are accurate.
+- Least-privilege `permissions` and `concurrency` (older runs of the same ref are cancelled).
+
+### Dependabot
+
+[`.github/dependabot.yml`](.github/dependabot.yml) checks **Maven** and **GitHub Actions** every Monday at 05:00
+(Asia/Jakarta):
+
+- Grouped PRs: `spring-boot`, `persistence` (Hibernate/Flyway/H2/PostgreSQL), `jackson`, `maven-plugins`,
+  `minor-and-patch`, and a single `github-actions` group.
+- Conventional commit prefixes (`build(deps)`, `build(deps-dev)`, `ci(deps)`), labels and assignee.
+- Major Spring Boot parent bumps are ignored and handled manually.
 
 ## Contributing
 
@@ -293,40 +323,19 @@ mvn spring-boot:run
 
 ### Current Version (0.0.1-SNAPSHOT)
 
-**Spring Boot 3 Migration** - Fully updated and tested
+**Spring Boot 4.1 on JDK 25**
 
-#### Major Updates:
+- ✅ **Spring Boot 4.1.2** with modular starters (`spring-boot-starter-webmvc`, `spring-boot-starter-flyway`,
+  `spring-boot-h2console`)
+- ✅ **JDK 25** for local builds and CI
+- ✅ **Spring Security 7**: `DaoAuthenticationProvider(UserDetailsService)` constructor API
+- ✅ **Hibernate 7**: `hibernate-jpamodelgen` replaced by the `hibernate-processor` annotation processor
+- ✅ **Jackson 3**: `Hibernate6Module` replaced by `tools.jackson` `Hibernate7Module`
+- ✅ Removed end-of-life `spring-security-oauth2` 2.5.2 (only referenced by `.bak` files)
+- ✅ Removed obsolete Hibernate properties (`hibernate.dialect`, `hibernate.id.new_generator_mappings`)
+- ✅ Hardened GitHub Actions workflow and grouped Dependabot updates
 
-- ✅ **Spring Boot 3.5.6**: Complete upgrade from Spring Boot 2.x
-- ✅ **Spring Security 6**: Migrated to component-based configuration
-    - Removed deprecated `WebSecurityConfigurerAdapter`
-    - Implemented `SecurityFilterChain` pattern
-    - Updated `AuthenticationManager` configuration
-- ✅ **Hibernate 6**: Full compatibility
-    - Updated to `Hibernate6Module` for Jackson
-    - Changed to `org.hibernate.orm` group ID
-    - Updated PostgreSQL dialect
-- ✅ **Jakarta EE**: Migrated from javax.* to jakarta.* packages
-- ✅ **H2 Database**: In-memory database as default (easily switchable to PostgreSQL)
-- ✅ **Flyway Migrations**: Updated to Spring Boot 3 property format
-- ✅ **OAuth2 Authentication**: Token-based authentication and authorization
-- ✅ **Company Structure Hierarchy**: Multi-level organizational structure
-- ✅ **Password Encoders**: Dual BCrypt encoders for users and OAuth clients
+### Previous: Spring Boot 3 Migration
 
-#### Bug Fixes:
-
-- Fixed missing package declarations
-- Fixed missing import statements
-- Fixed duplicate dependencies
-- Fixed main method visibility
-- Fixed SQL syntax for H2 compatibility (removed MySQL-specific syntax)
-- Fixed Flyway migration path conflicts
-- Fixed PasswordEncoder bean conflicts with `@Primary` annotation
-- Fixed Docker Compose integration issues
-
-#### Configuration Updates:
-
-- Application properties updated to Spring Boot 3 format
-- Security configuration modernized for Spring Security 6
-- Database configurations separated by profile (H2/PostgreSQL)
-- DevTools auto-reload enabled for development
+- Spring Boot 3.5.x, Spring Security 6 (`SecurityFilterChain`), Hibernate 6, Jakarta EE (`jakarta.*`)
+- H2 as default database, Flyway path fixes, dual BCrypt password encoders
