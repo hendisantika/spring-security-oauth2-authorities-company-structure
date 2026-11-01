@@ -1,7 +1,5 @@
 package id.my.hendisantika.companystructure.config;
 
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,6 +7,8 @@ import org.springframework.dao.annotation.PersistenceExceptionTranslationPostPro
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.datatype.hibernate7.Hibernate7Module;
 
 /**
  * Created by IntelliJ IDEA.
@@ -26,8 +26,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 public class HibernateConfiguration {
 
     @Bean
-    public Module hibernate6Module() {
-        return new Hibernate6Module();
+    public JacksonModule hibernate7Module() {
+        return new Hibernate7Module();
     }
 
     @Bean

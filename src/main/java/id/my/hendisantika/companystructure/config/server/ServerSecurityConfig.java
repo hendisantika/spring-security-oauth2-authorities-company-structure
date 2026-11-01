@@ -55,8 +55,7 @@ public class ServerSecurityConfig {
     public AuthenticationManager authenticationManager(
             UserDetailsService userDetailsService,
             @Qualifier("userPasswordEncoder") PasswordEncoder userPasswordEncoder) {
-        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-        authenticationProvider.setUserDetailsService(userDetailsService);
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userDetailsService);
         authenticationProvider.setPasswordEncoder(userPasswordEncoder);
 
         return new ProviderManager(authenticationProvider);
